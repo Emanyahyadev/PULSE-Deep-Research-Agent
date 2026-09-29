@@ -1,4 +1,4 @@
-# 🧠 Autonomous Research & Report Generation System
+# Autonomous Research & Report Generation System
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -8,171 +8,201 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-A **bounded autonomous research agent**: given a natural-language question, it independently plans search queries, acquires and evaluates web evidence, chunks and indexes sources in vector storage, and synthesizes a fully cited, structured report with zero human supervision during execution.
+A bounded autonomous research system that accepts natural-language inquiries, formulates search strategies, gathers and evaluates web evidence, indexes passage embeddings into vector storage, and synthesizes structured, fully cited reports without human intervention during execution.
 
 ---
 
-## 🖼️ Interface & Workflow Showcase
+## Architecture & State Machine Flowchart
+
+The system wraps non-deterministic LLM agents inside a deterministic state machine orchestrator to enforce execution bounds, fallback mechanisms, and citation integrity invariants.
+
+### Enterprise State Machine Diagram
+
+```mermaid
+flowchart TD
+    classDef primary fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#f8fafc;
+    classDef success fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ecfdf5;
+    classDef warning fill:#78350f,stroke:#f59e0b,stroke-width:2px,color:#fffbeb;
+    classDef danger fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#fef2f2;
+    classDef db fill:#312e81,stroke:#6366f1,stroke-width:2px,color:#eef2ff;
+
+    subgraph ClientLayer ["Client & Interface Layer"]
+        UserQuery["User Input: Research Query"]:::primary
+    end
+
+    subgraph OrchestratorEngine ["Deterministic State Machine Engine"]
+        Planning["Stage 1: Planning<br/>(Query Decomposition)"]:::primary
+        Searching["Stage 2: Searching<br/>(Parallel Web Acquisition)"]:::primary
+        Reading["Stage 3: Reading & Curation<br/>(Dedupe, Rank, Chunk)"]:::primary
+        VectorIndex["Semantic Vector Indexing<br/>(Passage Embeddings)"]:::primary
+        EvalCheck{"Budget & Evidence<br/>Evaluation"}:::warning
+        Writing["Stage 4: Writing<br/>(Grounded Report Synthesis)"]:::primary
+        CitationGate{"Citation Verification Gate<br/>citations(R) ⊆ sources(R)"}:::warning
+        DoneState["Stage 5: Completed Report"]:::success
+        FailState["Stage 6: Execution Failed"]:::danger
+    end
+
+    subgraph MemoryStorage ["Persistence & Vector Memory"]
+        QdrantStore[("Qdrant Vector DB<br/>(Report-Scoped Memory)")]:::db
+        PostgresStore[("PostgreSQL DB<br/>(State Events & Provenance)")]:::db
+    end
+
+    UserQuery --> Planning
+    Planning -->|Generate Plan| Searching
+    Searching -->|Acquired Sources| Reading
+    Reading -->|Chunk Passages| VectorIndex
+    VectorIndex --> QdrantStore
+    VectorIndex --> EvalCheck
+    EvalCheck -->|Thin Evidence & Round Cap Remaining| Planning
+    EvalCheck -->|Sufficient Evidence| Writing
+    Writing --> CitationGate
+    CitationGate -->|Verified Citations| DoneState
+    DoneState --> PostgresStore
+    Searching -->|Acquisition Timeout / Error| FailState
+    Writing -->|LLM Synthesis Timeout| FailState
+    FailState --> PostgresStore
+```
+
+### Theoretical Pipeline Architecture
+
+```
+User Query      → [Planner]  → Query Decomposition Strategy     (OpenAI Agents SDK)
+                → [Executor] → Web Evidence Acquisition         (Tavily / Exa / DuckDuckGo)
+                → [Curator]  → Deduplication → Rank → Chunk     (Curate Service)
+                → [Indexer]  → Vector Embeddings → Qdrant       (Semantic Memory)
+                → [Retriever]→ Top-k Evidence Selection        (Report-Scoped Filter)
+                → [Writer]   → Report Synthesis                 (OpenAI Agents SDK)
+                → [Validator]→ Verification: citations ⊆ sources (Integrity Invariant)
+                → [Persist]  → PostgreSQL DB Persistence        (State & Timeline)
+```
+
+---
+
+## Interface & Workflow Overview
 
 ### 1. Interactive Research Query Input
-Submit complex research questions in natural language. The system initializes a dedicated research session and state machine.
+Submit complex research questions in natural language. The interface initializes a dedicated research session and state machine orchestrator.
 
 ![Search Bar Interface](./assets/screenshots/search-bar.png)
 
 ---
 
-### 2. Real-Time Autonomous Pipeline & Live Timeline
-Watch the agent autonomously execute state transitions (`planning → searching → reading → writing → done`). Every event, query decomposition, and source acquisition step is streamed to the live visual timeline.
+### 2. Autonomous Pipeline & Live Execution Timeline
+View real-time state transitions (`planning → searching → reading → writing → done`). Event logs, query decompositions, and source acquisition steps stream directly to the timeline.
 
-#### Autonomous Search Planning & Execution
-![From Planning to Complete Research](./assets/screenshots/planning-execution-1.png)
+#### Search Query Planning & Execution
+![Search Planning and Execution](./assets/screenshots/planning-execution-1.png)
 
-#### Detailed Live Timeline & Stage Event Logs
-![Live Timeline & State Logs](./assets/screenshots/planning-execution-2.png)
+#### Real-Time Event Log Timeline
+![Live Timeline and Logs](./assets/screenshots/planning-execution-2.png)
 
 ---
 
-### 3. Synthesized Deep Research Report & Interactive Cited Sources
-The synthesized report features structured markdown sections, inline interactive citation tags `[1]`, `[2]`, and a dedicated sidebar detailing verified web sources, snippets, and domains.
+### 3. Synthesized Research Report & Citation Verification
+The generated report contains structured Markdown sections, inline interactive citation chips `[1]`, `[2]`, and a sidebar displaying verified sources, snippets, and domain metadata.
 
-#### Complete Synthesized Report & Sources View
-![Research Report & Cited Sources](./assets/screenshots/research-report-1.png)
+#### Synthesized Report View
+![Research Report View](./assets/screenshots/research-report-1.png)
 
-#### Cited Source Cards & Domain Analytics
-![Cited Sources & Web References](./assets/screenshots/research-report-2.png)
+#### Cited Source Cards
+![Cited Source Cards](./assets/screenshots/research-report-2.png)
 
-#### Citation Details & Source Breakdown
+#### Citation Verification Details
 ![Citation Verification Breakdown](./assets/screenshots/research-report-3.png)
 
 ---
 
-## 🏗️ Theoretical Pipeline & Architecture
+## Governing Design Principles
 
-```
-Question        → [Planner]  → Search Strategy          (OpenAI Agents SDK)
-        → [Executor] → Evidence Acquisition      (Tavily / Exa / DuckDuckGo)
-        → [Curator]  → Dedupe → Rank → Chunk    (Curate Service)
-        → [Indexer]  → Embed → Qdrant           (Semantic Memory, report-scoped)
-        → [Retriever]→ Top-k Evidence Selection (Vector Search filtered by report_id)
-        → [Writer]   → Grounded, Cited Report   (OpenAI Agents SDK)
-        → [Validator]→ citations(R) ⊆ sources(R)  ← Integrity Invariant
-        → [Persist]  → Postgres                 (State, Provenance, Results)
-```
-
-### State Machine Flowchart
-
-```mermaid
-graph TD
-    A[User Query] --> B[Planning Stage]
-    B -->|Generate Query Plan| C[Searching Stage]
-    C -->|Parallel Web Acquisition| D[Reading Stage]
-    D -->|Dedupe, Rank & Chunk| E[Semantic Vector Indexing]
-    E -->|Evidence Sufficient?| F{Check Budget & Quality}
-    F -->|Thin Evidence & Rounds Left| B
-    F -->|Sufficient Chunks| G[Writing Stage]
-    G -->|Synthesize Report| H[Citation Verification Gate]
-    H -->|Valid Citations| I[Done - Complete Report]
-    H -->|Invalid Citations Dropped| I
-    C -->|Error / Timeout| J[Failed Stage]
-    G -->|LLM Timeout / Error| J
-```
-
-Each pipeline stage is a distinct function with a strict contract. The orchestrator acts as a deterministic state machine wrapping non-deterministic intelligence.
-
----
-
-## ⚖️ Governing Principles
-
-| Principle | How It's Enforced |
+| Principle | Enforcement Mechanism |
 |---|---|
-| **Autonomy with Bounds** | Hard caps on `MAX_QUERIES`, `MAX_SOURCES`, `MAX_ROUNDS`, and `MAX_TOTAL_SECONDS` prevent runaway API usage or execution deadlocks. |
-| **Strict Grounding** | The Writer agent only receives retrieved vector chunks; system prompts prohibit outside knowledge extrapolation. |
-| **Citation Integrity** | Mathematical invariant check `citations(R) ⊆ sources(R)` runs before any report is accepted. |
-| **Semantic Separability** | Evidence is chunked into ~800-token passages, indexed individually with vector embeddings. |
-| **Deterministic Orchestration** | Fixed state transitions, explicit retries, per-call LLM timeouts, and strongly typed Pydantic contracts. |
-| **Observable State** | `report_events` table + `/api/reports/{id}/events` SSE/REST timeline; stages are fully audit-logged and resumable. |
-| **Report-Scoped Memory** | Vector searches filter strictly on `report_id`, ensuring evidence never leaks across research runs. |
+| **Autonomy with Bounds** | Strict limits on `MAX_QUERIES`, `MAX_SOURCES`, `MAX_ROUNDS`, and `MAX_TOTAL_SECONDS` prevent runaway API expenditure or infinite execution loops. |
+| **Strict Grounding** | The Writer agent is constrained to retrieved evidence passages; system prompts strictly prohibit outside knowledge extrapolation. |
+| **Citation Integrity** | Formal verification step `citations(R) ⊆ sources(R)` runs prior to final report acceptance. |
+| **Semantic Separability** | Sources are segmented into ~800-token passages, indexed independently with vector embeddings. |
+| **Deterministic Orchestration** | Typed state transitions, explicit retries, per-call LLM timeouts, and validated Pydantic schemas. |
+| **Observable State** | `report_events` table + `/api/reports/{id}/events` SSE/REST timeline for auditing and monitoring. |
+| **Report-Scoped Memory** | Qdrant vector queries filter strictly on `report_id`, ensuring isolation across research sessions. |
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **OpenAI Agents SDK**: Structured planning and report synthesis over OpenAI-compatible endpoints (NVIDIA NIM by default).
-- **Web Search**: Pluggable acquisition providers: **Tavily**, **Exa**, or keyless **DuckDuckGo** (`SEARCH_PROVIDER`).
-- **Qdrant Vector DB**: High-performance semantic vector database for report-scoped evidence retrieval.
-- **PostgreSQL**: Relational database for reports, sources, chunks, and state event timelines.
-- **FastAPI**: Async Python backend handling orchestration state machines and status endpoints.
-- **Next.js 14**: React framework providing the interactive search form, live execution timeline, and markdown report reader.
+- **Web Acquisition**: Pluggable provider architecture supporting Tavily, Exa, and DuckDuckGo (`SEARCH_PROVIDER`).
+- **Qdrant Vector DB**: High-performance vector database for report-scoped semantic passage search.
+- **PostgreSQL**: Relational storage for reports, sources, passage chunks, and state event timelines.
+- **FastAPI**: Async Python framework managing state machine orchestration and REST APIs.
+- **Next.js 14**: React framework providing the search interface, live timeline, and markdown viewer.
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
-research-agent/
+pulse-research-agent/
 ├── docker-compose.yml             # Postgres :5434 + Qdrant :6333
 ├── LICENSE                        # MIT License
 ├── CONTRIBUTING.md                # Development & contribution guidelines
 ├── .env.example                   # Environment configuration template
-├── README.md                      # Comprehensive project documentation
-├── Agent testing images/          # Original test screenshots
+├── README.md                      # Primary project documentation
+├── Agent testing images/          # Test screenshots directory
 ├── assets/
-│   └── screenshots/               # Clean screenshot gallery for README
+│   └── screenshots/               # Web-optimized documentation assets
 ├── backend/
 │   ├── app/
-│   │   ├── main.py                # FastAPI entry point & lifespan
-│   │   ├── config.py              # Application settings & bounded caps
-│   │   ├── db.py                  # Database engine & session initialization
-│   │   ├── models.py              # SQLAlchemy models (Report, Source, Chunk, ReportEvent)
-│   │   ├── schemas.py             # Pydantic API request/response schemas
+│   │   ├── main.py                # FastAPI entry point & lifecycle
+│   │   ├── config.py              # Configuration & execution bounds
+│   │   ├── db.py                  # Database engine & session setup
+│   │   ├── models.py              # SQLAlchemy database models
+│   │   ├── schemas.py             # Pydantic API schemas
 │   │   ├── orchestrator.py        # Bounded state machine engine
-│   │   ├── routes.py              # REST API routes for report management
+│   │   ├── routes.py              # REST API endpoints
 │   │   ├── agents/
-│   │   │   ├── prompts.py         # System prompts for Planner and Writer agents
-│   │   │   └── research_agents.py # Agents SDK integrations & structured outputs
+│   │   │   ├── prompts.py         # System prompts for Planner and Writer
+│   │   │   └── research_agents.py # Agents SDK integrations
 │   │   └── services/
-│   │       ├── search.py          # Tavily / Exa / DuckDuckGo web search service
-│   │       ├── curate.py          # Deduplication, ranking, and chunking logic
+│   │       ├── search.py          # Web search acquisition provider
+│   │       ├── curate.py          # Deduplication, ranking, and chunking
 │   │       ├── embeddings.py      # Vector embedding generator
-│   │       └── vector.py          # Qdrant vector indexing and retrieval
-│   ├── tests/                     # Pytest suite (citations, fallbacks, curation)
-│   ├── pyproject.toml             # Backend dependencies and build config
-│   └── Dockerfile                 # Container setup for FastAPI backend
+│   │       └── vector.py          # Qdrant indexing & retrieval
+│   ├── tests/                     # Pytest suite
+│   ├── pyproject.toml             # Backend project configuration
+│   └── Dockerfile                 # Backend container definition
 └── frontend/
-    ├── app/                       # Next.js App Router pages
-    │   ├── page.tsx               # Interactive question search interface
-    │   ├── reports/[id]/page.tsx   # Live timeline & cited report view
-    │   └── globals.css            # Global CSS styling & design tokens
+    ├── app/                       # Next.js App Router
+    │   ├── page.tsx               # Query entry interface
+    │   ├── reports/[id]/page.tsx   # Live timeline & report viewer
+    │   └── globals.css            # Stylesheet & design tokens
     ├── lib/
-    │   └── api.ts                 # Axios / Fetch client for backend API
+    │   └── api.ts                 # API client wrapper
     ├── package.json               # Frontend dependencies
     └── tsconfig.json              # TypeScript configuration
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## Quick Start Guide
 
-### Prerequisites
-- [Docker](https://www.docker.com/) & Docker Compose
-- [Python 3.11+](https://www.python.org/)
-- [Node.js 18+](https://nodejs.org/)
+### System Prerequisites
+- Docker & Docker Compose
+- Python 3.11+
+- Node.js 18+
 
 ---
 
-### Step 1: Infrastructure Setup
+### Step 1: Infrastructure Initialization
 
-Clone the repository and launch PostgreSQL and Qdrant via Docker Compose:
+Clone the repository and launch PostgreSQL and Qdrant services:
 
 ```bash
-git clone https://github.com/your-username/research-agent.git
-cd research-agent
+git clone https://github.com/Emanyahyadev/pulse-research-agent.git
+cd pulse-research-agent
 
-# Launch Postgres (:5434) and Qdrant (:6333)
 docker compose up -d
 ```
 
-Copy `.env.example` to `.env` and set your API credentials:
+Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
@@ -185,34 +215,33 @@ cp .env.example .env
 ```env
 # Credentials
 OPENAI_API_KEY=your_openai_or_nvidia_nim_api_key
-TAVILY_API_KEY=your_tavily_api_key   # Optional if using DuckDuckGo
-EXA_API_KEY=your_exa_api_key       # Optional
+TAVILY_API_KEY=your_tavily_api_key
 
 # Search Provider: "tavily" | "exa" | "ddg"
 SEARCH_PROVIDER=tavily
 
-# LLM & Embeddings Endpoints (Defaults to NVIDIA NIM)
+# LLM & Embeddings Endpoints
 LLM_BASE_URL=https://integrate.api.nvidia.com/v1
 EMBEDDINGS_BASE_URL=https://integrate.api.nvidia.com/v1
 
-# Models
+# Model Selection
 PLANNER_MODEL=meta/llama-3.3-70b-instruct
 WRITER_MODEL=meta/llama-3.3-70b-instruct
 EMBEDDING_MODEL=nvidia/nv-embedqa-e5-v5
 
-# Database URLs
+# Storage Endpoints
 DATABASE_URL=postgresql+psycopg://research:research@localhost:5434/research
 QDRANT_URL=http://localhost:6333
 ```
 
 ---
 
-### Step 3: Start Backend (FastAPI)
+### Step 3: Backend Setup (FastAPI)
 
 ```bash
 cd backend
 
-# Create and activate Python virtual environment
+# Initialize and activate Python virtual environment
 python -m venv .venv
 
 # Windows:
@@ -220,103 +249,75 @@ python -m venv .venv
 # Linux/macOS:
 # source .venv/bin/activate
 
-# Install backend dependencies
+# Install backend package in editable mode
 pip install -e .
 
-# Launch FastAPI application server
+# Start development server
 uvicorn app.main:app --reload --port 8000
 ```
 
-The backend server will start at `http://localhost:8000`. You can inspect the Swagger API docs at `http://localhost:8000/docs`.
+Backend API server runs at `http://localhost:8000`. Interactive OpenAPI documentation is available at `http://localhost:8000/docs`.
 
 ---
 
-### Step 4: Start Frontend (Next.js)
-
-In a new terminal window:
+### Step 4: Frontend Setup (Next.js)
 
 ```bash
 cd frontend
 
-# Install Node dependencies
 npm install
-
-# Start Next.js development server
 npm run dev
 ```
 
-Open `http://localhost:3000` in your web browser to submit questions and view real-time research runs!
+Access the frontend application at `http://localhost:3000`.
 
 ---
 
-## ⚡ Bounded Autonomy Configuration
+## Execution Caps & Bounded Configuration
 
-Every research budget limit can be configured via `.env` or application settings:
+Execution parameters are configured via environment variables:
 
 | Parameter | Default | Description |
 |---|---|---|
-| `MAX_QUERIES` | `5` | Maximum number of web search queries generated per run |
-| `MAX_SOURCES` | `10` | Maximum number of unique web sources ingested and ranked |
-| `MAX_ROUNDS` | `2` | Maximum planning → search iterations if initial evidence is sparse |
-| `MAX_TOTAL_SECONDS` | `240.0` | Maximum wall-clock budget for an entire research run (4 minutes) |
-| `TOP_K` | `12` | Number of top vector evidence chunks retrieved for synthesis |
-| `PLANNER_TIMEOUT` | `45.0` | Hard per-call LLM timeout for search plan generation |
-| `WRITER_TIMEOUT` | `120.0` | Hard per-call LLM timeout for final report synthesis |
+| `MAX_QUERIES` | `5` | Maximum search queries generated per research run |
+| `MAX_SOURCES` | `10` | Maximum web sources ingested and ranked |
+| `MAX_ROUNDS` | `2` | Maximum planning and search iterations |
+| `MAX_TOTAL_SECONDS` | `240.0` | Hard wall-clock execution budget (seconds) |
+| `TOP_K` | `12` | Number of vector passage chunks retrieved for report synthesis |
+| `PLANNER_TIMEOUT` | `45.0` | Timeout cap for search planning LLM calls |
+| `WRITER_TIMEOUT` | `120.0` | Timeout cap for report synthesis LLM calls |
 
 ---
 
-## 📡 REST API Reference
+## REST API Specification
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/reports` | Initialize a new research run (`{"query": "..."}`) |
-| `GET` | `/api/reports/{id}` | Get full report details, state, sources, and markdown report |
-| `GET` | `/api/reports/{id}/events` | Stream/Fetch real-time stage event timeline |
-| `POST` | `/api/reports/{id}/retry` | Re-run a failed or completed report through the pipeline |
+| `POST` | `/api/reports` | Submit research query and initialize state machine |
+| `GET` | `/api/reports/{id}` | Retrieve report status, sources, citations, and content |
+| `GET` | `/api/reports/{id}/events` | Fetch or stream event timeline |
+| `POST` | `/api/reports/{id}/retry` | Re-trigger pipeline execution for a report |
 | `GET` | `/api/reports` | List recent research reports |
-| `GET` | `/healthz` | System health check (Postgres + Qdrant reachability) |
+| `GET` | `/healthz` | System health and vector store connection check |
 
 ---
 
-## 🧪 Running Tests
+## Verification & Testing
 
-Execute the backend test suite with pytest:
+Execute the backend test suite:
 
 ```bash
 cd backend
 pytest
 ```
 
-Tests cover:
-- Citation integrity gate & invariant checking (`test_citations.py`)
-- Evidence curation, deduplication, and chunking (`test_curate.py`)
-- LLM agent timeout fallbacks (`test_agent_fallbacks.py`)
+Test coverage includes:
+- Citation invariant verification (`test_citations.py`)
+- Evidence curation, deduplication, and passage chunking (`test_curate.py`)
+- Agent timeout fallback mechanisms (`test_agent_fallbacks.py`)
 
 ---
 
-## 📤 Pushing to GitHub
+## License
 
-Follow these simple steps to push this repository to your GitHub account:
-
-```bash
-# 1. Initialize git (already completed)
-git status
-
-# 2. Add remote repository URL (replace with your GitHub repository URL)
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
-
-# 3. Stage all files
-git add .
-
-# 4. Commit changes
-git commit -m "feat: initial commit of Autonomous Research Agent system with docs and UI showcase"
-
-# 5. Push to GitHub main branch
-git push -u origin main
-```
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
