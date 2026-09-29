@@ -1,4 +1,4 @@
-# Autonomous Research & Report Generation System
+# PULSE - Deep Research Agent
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -8,7 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-A bounded autonomous research system that accepts natural-language inquiries, formulates search strategies, gathers and evaluates web evidence, indexes passage embeddings into vector storage, and synthesizes structured, fully cited reports without human intervention during execution.
+**PULSE** is a bounded autonomous deep research agent system that accepts natural-language inquiries, formulates multi-step search strategies, gathers and evaluates web evidence, indexes passage embeddings into vector storage, and synthesizes structured, fully cited reports without human intervention during execution.
 
 ---
 
