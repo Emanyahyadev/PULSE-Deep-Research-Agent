@@ -15,27 +15,34 @@ A **bounded autonomous research agent**: given a natural-language question, it i
 ## 🖼️ Interface & Workflow Showcase
 
 ### 1. Interactive Research Query Input
-Simply submit any complex research question in natural language. The system initializes a dedicated research session and state machine.
+Submit complex research questions in natural language. The system initializes a dedicated research session and state machine.
 
-![Search Bar Interface](assets/screenshots/search-bar.png)
+![Search Bar Interface](./assets/screenshots/search-bar.png)
 
 ---
 
 ### 2. Real-Time Autonomous Pipeline & Live Timeline
 Watch the agent autonomously execute state transitions (`planning → searching → reading → writing → done`). Every event, query decomposition, and source acquisition step is streamed to the live visual timeline.
 
-| Autonomous Search Planning & Execution | Detailed Live Stage Events |
-| :---: | :---: |
-| ![From Planning to Complete Research](assets/screenshots/planning-execution-1.png) | ![Live Timeline & State Logs](assets/screenshots/planning-execution-2.png) |
+#### Autonomous Search Planning & Execution
+![From Planning to Complete Research](./assets/screenshots/planning-execution-1.png)
+
+#### Detailed Live Timeline & Stage Event Logs
+![Live Timeline & State Logs](./assets/screenshots/planning-execution-2.png)
 
 ---
 
 ### 3. Synthesized Deep Research Report & Interactive Cited Sources
 The synthesized report features structured markdown sections, inline interactive citation tags `[1]`, `[2]`, and a dedicated sidebar detailing verified web sources, snippets, and domains.
 
-| Complete Report & Cited Sources | Source Cards & Domain Analytics | Citation Verification Breakdown |
-| :---: | :---: | :---: |
-| ![Research Report & Cited Sources](assets/screenshots/research-report-1.png) | ![Cited Sources & Web References](assets/screenshots/research-report-2.png) | ![Citation Details](assets/screenshots/research-report-3.png) |
+#### Complete Synthesized Report & Sources View
+![Research Report & Cited Sources](./assets/screenshots/research-report-1.png)
+
+#### Cited Source Cards & Domain Analytics
+![Cited Sources & Web References](./assets/screenshots/research-report-2.png)
+
+#### Citation Details & Source Breakdown
+![Citation Verification Breakdown](./assets/screenshots/research-report-3.png)
 
 ---
 
