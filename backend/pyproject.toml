@@ -1,0 +1,31 @@
+[project]
+name = "research-agent-backend"
+version = "0.1.0"
+description = "Bounded autonomous research agent: plan → acquire → curate → index → retrieve → synthesize"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "openai>=1.40",
+    "openai-agents>=0.2",
+    "httpx>=0.27",
+    "qdrant-client>=1.11",
+    "ddgs>=9.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
